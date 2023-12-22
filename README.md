@@ -37,14 +37,20 @@ git clone https://github.com/veri5/undefi
 cd undefi
 ```
 
-3. Install the dependencies and build the project:
+3. Install the dependencies:
+
+```bash
+make install
+```
+
+4. build the project:
 
 ```bash
 make all
 ```
 The command above will install the required dependencies, create a `.env` file from `.env.example`, and update and build the project.
 
-4. Update the PRIVATE_KEY variable with your private key
+5. Update the PRIVATE_KEY variable with your private key
 
 ```bash
 PRIVATE_KEY=<your-private-key-here>
