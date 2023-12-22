@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import { Test } from "forge-std/Test.sol";
-import "../src/escrow/Escrow.sol";
+import "../src/evm/escrow/Escrow.sol";
 
 contract EscrowTest is Test {
   Escrow escrow;

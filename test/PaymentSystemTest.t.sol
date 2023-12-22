@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import { Test } from "forge-std/Test.sol";
-import "../src/escrow/PaymentSystem.sol";
+import "../src/evm/escrow/PaymentSystem.sol";
 
 contract PaymentSystemTest is Test {
   PaymentSystem paymentSystem;
