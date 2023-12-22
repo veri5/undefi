@@ -88,9 +88,9 @@ The `SCRIPT` parameter specifies which smart contract or script you wish to depl
 Example:
 
 ```bash
-make deploy NETWORK=polygon SCRIPT=ExecutableSample
+make deploy NETWORK=polygon SCRIPT=PaymentSystem
 ```
-The above command deploys the `ExecutableSample` contract to the Polygon Mumbai testnet. This script can also be used to target other contracts within the project.
+The above command deploys the `PaymentSystem` contract to the Polygon Mumbai testnet. This script can also be used to target other contracts within the project.
 
 # Testnet networks
 The supported testnet networks are
