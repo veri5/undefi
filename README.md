@@ -28,13 +28,13 @@ This program built for i386-apple-darwin11.3.0
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/axelarnetwork/foundry-axelar-gmp-example.git
+git clone https://github.com/veri5/undefi
 ```
 
 2. Navigate into the project directory:
 
 ```bash
-cd foundry-axelar-gmp-example
+cd undefi
 ```
 
 3. Install the dependencies and build the project:
