@@ -86,7 +86,7 @@ make deploy NETWORK=polygon SCRIPT=ExecutableSample
 ```
 The above command deploys the `ExecutableSample` contract to the Polygon Mumbai testnet. This script can also be used to target other contracts within the project.
 
-# testnet networks
+# Testnet networks
 The supported testnet networks are
 
 - Polygon
