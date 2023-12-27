@@ -9,6 +9,7 @@ contract TransferTracker {
     event FundsWithdrawn(uint256 amount, address beneficiary);
 
     event TransferRequested(uint256 transferId, uint256 amount, address sender); 
+    event TransferTriggered(uint256 transferId, uint256 amount, address sender);
     event TransferReceived(uint256 transferId, uint256 amount, address sender); 
 
     enum TransferStatus {
@@ -54,7 +55,7 @@ contract TransferTracker {
         require(record.status == TransferStatus.Pending, "Invalid transfer status");
 
         record.status = TransferStatus.Completed;
-        emit TransferReceived(transferId, record.amount, record.sender);
+        emit TransferTriggered(transferId, record.amount, record.sender);
     }
 
     function receiveTransfer(uint256 transferId, address payable beneficiary) external {
