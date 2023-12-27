@@ -1,13 +1,13 @@
-SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../src/evm/send-ack/SendAck.sol";
+import "../src/evm/SendReceive.sol";
 import "./NetworkDetailsBase.sol";
 
-contract SendAckScript is Script, NetworkDetailsBase {
-    ExecutableSample public executableSample;
+contract SendReceiveScript is Script, NetworkDetailsBase {
+    SendReceive public sendReceive;
 
     function run() public {
         uint256 privateKey = vm.envUint("PRIVATE_KEY");
@@ -16,7 +16,7 @@ contract SendAckScript is Script, NetworkDetailsBase {
         (address gateway, address gasService) = getNetworkDetails(network);
 
         vm.startBroadcast(privateKey);
-        executableSample = new ExecutableSample(gateway, gasService);
+        sendReceive = new SendReceive(gateway, gasService, network);
         vm.stopBroadcast();
     }
 }
