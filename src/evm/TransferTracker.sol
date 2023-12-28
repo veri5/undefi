@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.13;
 
 contract TransferTracker {
     mapping(address => uint256) private prevTransferIds;
     mapping(uint256 => TransferRecord) private transferRecords;
 
-    event FundsDeposited(uint256 amount, address escrowAddress);
-    event FundsWithdrawn(uint256 amount, address beneficiary);
+    event FundsDeposited(address indexed escrow, uint256 amount);
+    event FundsWithdrawn(address indexed beneficiary, uint256 amount);
 
-    event TransferRequested(uint256 transferId, uint256 amount, address sender); 
-    event TransferTriggered(uint256 transferId, uint256 amount, address sender);
-    event TransferReceived(uint256 transferId, uint256 amount, address sender); 
+    event TransferRequested(address indexed sender, uint256 transferId, uint256 amount); 
+    event TransferTriggered(address indexed sender, uint256 transferId, uint256 amount); 
+    event TransferReceived(address indexed sender, uint256 transferId, uint256 amount); 
 
     enum TransferStatus {
         Pending,
@@ -32,7 +32,7 @@ contract TransferTracker {
 
     function deposit() external payable {
         require(msg.sender == escrow, "Only escrow can deposit");
-        emit FundsDeposited(msg.value, escrow);
+        emit FundsDeposited(escrow, msg.value);
         // Handled directly by payable function
     }
 
@@ -40,13 +40,13 @@ contract TransferTracker {
         require(msg.sender == escrow, "Only escrow can withdraw");
         require(address(this).balance >= amount, "Insufficient contract balance");
         beneficiary.transfer(amount);
-        emit FundsWithdrawn(amount, beneficiary);
+        emit FundsWithdrawn(beneficiary, amount);
     }
 
     function requestTransfer(uint256 amount) external {
         uint256 transferId = _createTransferId(amount);
         transferRecords[transferId] = TransferRecord(amount, TransferStatus.Pending, msg.sender);
-        emit TransferRequested(transferId, amount, msg.sender); 
+        emit TransferRequested(msg.sender, transferId, amount); 
     }
 
     // ToDo: Manually executed for Miletone I
@@ -55,7 +55,7 @@ contract TransferTracker {
         require(record.status == TransferStatus.Pending, "Invalid transfer status");
 
         record.status = TransferStatus.Completed;
-        emit TransferTriggered(transferId, record.amount, record.sender);
+        emit TransferTriggered(record.sender, transferId, record.amount);
     }
 
     function receiveTransfer(uint256 transferId, address payable beneficiary) external {
@@ -71,7 +71,7 @@ contract TransferTracker {
         require(address(this).balance >= record.amount, "Insufficient contract balance");
         beneficiary.transfer(record.amount);
 
-        emit TransferReceived(transferId, record.amount, record.sender);
+        emit TransferReceived(record.sender, transferId, record.amount);
         record.status = TransferStatus.Completed;
     }
 
