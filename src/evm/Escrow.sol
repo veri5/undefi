@@ -16,10 +16,7 @@ contract Escrow is ReentrancyGuard {
     /**
      * @dev Deposit funds into the escrow.
      */
-    function deposit() 
-        external 
-        payable 
-    {
+    function deposit() external payable {
         balance += msg.value; // Use direct addition for uint256
         emit Deposited(msg.value);
     }
@@ -29,10 +26,7 @@ contract Escrow is ReentrancyGuard {
      * @param beneficiary The address that will receive the withdrawn funds.
      * @param amount The amount of funds to withdraw.
      */
-    function withdraw(address payable beneficiary, uint256 amount)
-        external
-        nonReentrant
-    {
+    function withdraw(address payable beneficiary, uint256 amount) external nonReentrant {
         require(amount <= balance, "Insufficient balance");
         balance -= amount; // Use direct subtraction for uint256
         beneficiary.transfer(amount);
