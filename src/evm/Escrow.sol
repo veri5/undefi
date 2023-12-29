@@ -2,12 +2,13 @@
 pragma solidity ^0.8.20;
 
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title Escrow
  * @dev Implements an escrow mechanism with basic security and functionality.
  */
-contract Escrow is ReentrancyGuard {
+contract Escrow is ReentrancyGuard, Pausable {
     event Deposited(uint256 amount);
     event Withdrawn(address indexed beneficiary, uint256 amount);
 
@@ -26,7 +27,7 @@ contract Escrow is ReentrancyGuard {
      * @param beneficiary The address that will receive the withdrawn funds.
      * @param amount The amount of funds to withdraw.
      */
-    function withdraw(address payable beneficiary, uint256 amount) external nonReentrant {
+    function withdraw(address payable beneficiary, uint256 amount) external whenNotPaused nonReentrant {
         require(amount <= balance, "Insufficient balance");
         balance -= amount; // Use direct subtraction for uint256
         beneficiary.transfer(amount);
