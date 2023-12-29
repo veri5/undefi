@@ -1,84 +1,80 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-contract TransferTracker {
-    mapping(address => uint256) private prevTransferIds;
-    mapping(uint256 => TransferRecord) private transferRecords;
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Escrow} from "./Escrow.sol";
 
-    event FundsDeposited(address indexed primary, uint256 amount);
-    event FundsWithdrawn(address indexed beneficiary, uint256 amount);
+/**
+ * @title TransferTracker
+ * @dev A contract for tracking and managing fund transfers with an associated escrow.
+ */
+contract TransferTracker is Ownable {
+  mapping(uint256 => TransferRecord) public transferRecords;
 
-    event TransferRequested(address indexed sender, uint256 transferId, uint256 amount); 
-    event TransferTriggered(address indexed sender, uint256 transferId, uint256 amount); 
-    event TransferReceived(address indexed sender, uint256 transferId, uint256 amount); 
+  event TransferRequested(address indexed origin, uint256 amount);
+  event TransferTriggered(address indexed destination, uint256 amount);
 
-    enum TransferStatus {
-        Pending,
-        Completed,
-        Failed
-    }
+  struct TransferRecord {
+    address payable origin;
+    uint256 amount;
+    TransferStatus status;
+  }
 
-    struct TransferRecord {
-        uint256 amount;
-        TransferStatus status;
-        address sender; 
-    }
+  enum TransferStatus {
+    Pending,
+    Completed,
+    Failed
+  }
 
-    address payable public primary;
+  Escrow public escrow;
 
-    constructor() {
-        primary = payable(msg.sender); // Set primary to owner in constructor
-    }
+  /**
+   * @dev Constructor to initialize the TransferTracker contract.
+   * @param owner The address that will be set as the owner of the contract.
+   */
+  constructor(address owner) Ownable(owner) { 
+    escrow = new Escrow();
+  }
 
-    function deposit() external payable {
-        require(msg.sender == primary, "Only primary can deposit");
-        emit FundsDeposited(primary, msg.value);
-        // Handled directly by payable function
-    }
+  /**
+   * @dev Requests a fund transfer, creating a transfer record.
+   * @param origin The address from which the transfer is requested.
+   * @param amount The amount of funds to be transferred.
+   * @return transferId The unique identifier for the transfer.
+   */
+  function requestTransfer(address payable origin, uint256 amount) external returns (uint256) {
+    uint256 transferId = _createTransferId(amount);
+    transferRecords[transferId] = TransferRecord(origin, amount, TransferStatus.Pending);
 
-    function withdraw(uint256 amount, address payable beneficiary) external {
-        require(msg.sender == primary, "Only primary can withdraw");
-        require(address(this).balance >= amount, "Insufficient contract balance");
-        beneficiary.transfer(amount);
-        emit FundsWithdrawn(beneficiary, amount);
-    }
+    emit TransferRequested(origin, amount);
+    return transferId;
+  }
 
-    function requestTransfer(uint256 amount) external {
-        uint256 transferId = _createTransferId(amount);
-        transferRecords[transferId] = TransferRecord(amount, TransferStatus.Pending, msg.sender);
-        emit TransferRequested(msg.sender, transferId, amount); 
-    }
+  /**
+   * @dev Triggers a fund transfer to a specified destination.
+   * @param destination The address to which the transfer is triggered.
+   * @param transferId The unique identifier for the transfer.
+   */
+  function triggerTransfer(address payable destination, uint256 transferId) external onlyOwner {
+    TransferRecord storage record = transferRecords[transferId];
+    require(record.status == TransferStatus.Pending, "Invalid transfer status");
+    require(record.amount > 0, "Invalid transfer amount");
 
-    // ToDo: Manually executed for Miletone I
-    function triggerTransfer(uint256 transferId) external {
-        TransferRecord storage record = transferRecords[transferId];
-        require(record.status == TransferStatus.Pending, "Invalid transfer status");
+    require(record.amount <= escrow.balance(), "Insufficient contract balance");
+    escrow.withdraw(destination, record.amount);
 
-        record.status = TransferStatus.Completed;
-        emit TransferTriggered(record.sender, transferId, record.amount);
-    }
+    emit TransferTriggered(destination, record.amount);
+    record.status = TransferStatus.Completed;
+  }
 
-    function receiveTransfer(uint256 transferId, address payable beneficiary) external {
-        TransferRecord storage record = transferRecords[transferId];
-        require(record.status == TransferStatus.Pending, "Invalid transfer status");
-        require(record.amount > 0, "Invalid transfer amount");
-        require(record.sender == msg.sender, "Unauthorized sender"); 
-
-        // Ensure beneficiary address is valid
-        require(beneficiary != address(0), "Invalid beneficiary address");
-
-        // Transfer funds from the contract
-        require(address(this).balance >= record.amount, "Insufficient contract balance");
-        beneficiary.transfer(record.amount);
-
-        emit TransferReceived(record.sender, transferId, record.amount);
-        record.status = TransferStatus.Completed;
-    }
-
-    function _createTransferId(uint256 amount) internal returns (uint256) {
-        require(msg.sender != address(0), "Invalid sender");
-        uint256 transferId = uint256(keccak256(abi.encodePacked(msg.sender, amount, block.timestamp, prevTransferIds[msg.sender])));
-        prevTransferIds[msg.sender] = transferId;
-        return transferId;
-    }
+  /**
+   * @dev Internal function to create a unique transfer ID based on the sender's address, amount, and timestamp.
+   * @param amount The amount of funds to be transferred.
+   * @return transferId The unique identifier for the transfer.
+   */
+  function _createTransferId(uint256 amount) internal view returns (uint256) {
+    require(msg.sender != address(0), "Invalid sender");
+    uint256 transferId = uint256(keccak256(abi.encodePacked(msg.sender, amount, block.timestamp)));
+    return transferId;
+  }
 }

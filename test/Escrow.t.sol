@@ -2,79 +2,65 @@
 pragma solidity ^0.8.20;
 
 import { Test } from "forge-std/Test.sol";
-import "../src/evm/Escrow.sol";
+import { Escrow } from "../src/evm/Escrow.sol";
 
 /**
  * @title EscrowTest Contract
- * @dev This contract is used for testing the Escrow contract functionality.
+ * @dev Contract designed for testing the Escrow contract functionality.
  */
 contract EscrowTest is Test {
-    address payable owner;
+    // Addresses for testing purposes
     address payable beneficiary;
+    address payable unauthorized;
+    
+    // Instance of the Escrow contract
     Escrow escrow;
+    
+    // Amount for testing deposits and withdrawals
     uint256 amount;
 
-    event Deposited(address indexed owner, uint256 amount);
-    event Withdrawn(address indexed beneficiary, uint256 amount);
-
     /**
-     * @dev Set up initial test conditions.
+     * @dev Sets up initial test conditions.
      */
     function setUp() public {
-        owner = payable(address(this));
         beneficiary = payable(makeAddr("beneficiary"));
-        escrow = new Escrow(owner);
+        escrow = new Escrow();
         amount = 100 ether;
     }
 
     /**
-     * @dev Test the deposit function.
+     * @dev Tests the deposit function.
      */
     function testDeposit() public {
-        vm.expectEmit(true, false, false, true, address(escrow));
-        emit Deposited(owner, amount);
+        // Emits an event for expected deposit
+        vm.expectEmit(false, false, false, true, address(escrow));
+        emit Escrow.Deposited(amount);
 
+        // Calls the deposit function
         escrow.deposit{value: amount}();
 
+        // Asserts the correctness of the escrow balance
         assertEq(escrow.balance(), amount, "Deposit: Incorrect escrow balance");
     }
 
     /**
-     * @dev Test the withdraw function.
+     * @dev Tests the withdraw function.
      */
     function testWithdraw() public {
+        // Deposits an amount into the escrow for testing
         escrow.deposit{value: amount}();
-
+        
+        // Emits an event for expected withdrawal
         vm.expectEmit(true, false, false, true, address(escrow));
-        emit Withdrawn(beneficiary, amount);
+        emit Escrow.Withdrawn(beneficiary, amount);
 
+        // Calls the withdraw function
         escrow.withdraw(beneficiary, amount);
 
+        // Asserts the correctness of the escrow balance after withdrawal
         assertEq(escrow.balance(), 0, "Withdraw: Incorrect escrow balance after withdrawal");
+
+        // Asserts that the beneficiary received the correct amount
         assertEq(address(beneficiary).balance, amount, "Withdraw: Beneficiary did not receive funds");
-    }
-
-    /**
-     * @dev Test that only the owner can deposit funds.
-     */
-    function testOnlyOwnerDeposit() public {
-        vm.expectRevert();
-
-        vm.startPrank(msg.sender);
-        escrow.deposit{value: amount}();
-        vm.stopPrank();
-        assertEq(escrow.balance(), 0, "OnlyOwnerDeposit: Escrow balance should remain unchanged");
-    }
-
-    /**
-     * @dev Test that only the owner can withdraw funds.
-     */
-    function testOnlyOwnerWithdraw() public {
-        vm.expectRevert();
-
-        vm.startPrank(msg.sender);
-        escrow.withdraw(beneficiary, amount);
-        vm.stopPrank();
-        assertEq(escrow.balance(), 0, "OnlyOwnerWithdraw: Escrow balance should remain unchanged");
     }
 }
