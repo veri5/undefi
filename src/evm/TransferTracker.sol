@@ -58,8 +58,8 @@ contract TransferTracker is Ownable {
 
     require(record.amount <= escrow.balance(), "Insufficient contract balance");
     escrow.withdraw(destination, record.amount);
-
-    emit TransferTriggered(destination, record.amount);
     record.status = TransferStatus.Completed;
+    
+    emit TransferTriggered(destination, record.amount);
   }
 }
