@@ -78,7 +78,7 @@ format:
    
 # Test target   
 test:
-	@forge test -vvv
+	@forge test -vvvv
   
 # Clean target
 clean:

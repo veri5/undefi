@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.20;
 
 contract TransferTracker {
     mapping(address => uint256) private prevTransferIds;
     mapping(uint256 => TransferRecord) private transferRecords;
 
-    event FundsDeposited(address indexed escrow, uint256 amount);
+    event FundsDeposited(address indexed primary, uint256 amount);
     event FundsWithdrawn(address indexed beneficiary, uint256 amount);
 
     event TransferRequested(address indexed sender, uint256 transferId, uint256 amount); 
@@ -24,20 +24,20 @@ contract TransferTracker {
         address sender; 
     }
 
-    address payable public escrow;
+    address payable public primary;
 
     constructor() {
-        escrow = payable(msg.sender); // Set escrow to owner in constructor
+        primary = payable(msg.sender); // Set primary to owner in constructor
     }
 
     function deposit() external payable {
-        require(msg.sender == escrow, "Only escrow can deposit");
-        emit FundsDeposited(escrow, msg.value);
+        require(msg.sender == primary, "Only primary can deposit");
+        emit FundsDeposited(primary, msg.value);
         // Handled directly by payable function
     }
 
     function withdraw(uint256 amount, address payable beneficiary) external {
-        require(msg.sender == escrow, "Only escrow can withdraw");
+        require(msg.sender == primary, "Only primary can withdraw");
         require(address(this).balance >= amount, "Insufficient contract balance");
         beneficiary.transfer(amount);
         emit FundsWithdrawn(beneficiary, amount);
