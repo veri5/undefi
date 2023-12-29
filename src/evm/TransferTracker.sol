@@ -11,11 +11,9 @@ import {Escrow} from "./Escrow.sol";
 contract TransferTracker is Ownable {
   mapping(uint256 => TransferRecord) public transferRecords;
 
-  event TransferRequested(address indexed origin, uint256 amount);
   event TransferTriggered(address indexed destination, uint256 amount);
 
   struct TransferRecord {
-    address payable origin;
     uint256 amount;
     TransferStatus status;
   }
@@ -38,15 +36,13 @@ contract TransferTracker is Ownable {
 
   /**
    * @dev Requests a fund transfer, creating a transfer record.
-   * @param origin The address from which the transfer is requested.
    * @param amount The amount of funds to be transferred.
    * @return transferId The unique identifier for the transfer.
    */
-  function requestTransfer(address payable origin, uint256 amount) external returns (uint256) {
-    uint256 transferId = _createTransferId(amount);
-    transferRecords[transferId] = TransferRecord(origin, amount, TransferStatus.Pending);
+  function requestTransfer(uint256 amount) external returns (uint256) {
+    uint256 transferId = uint256(keccak256(abi.encodePacked(msg.sender, amount, block.timestamp)));
+    transferRecords[transferId] = TransferRecord(amount, TransferStatus.Pending);
 
-    emit TransferRequested(origin, amount);
     return transferId;
   }
 
@@ -65,16 +61,5 @@ contract TransferTracker is Ownable {
 
     emit TransferTriggered(destination, record.amount);
     record.status = TransferStatus.Completed;
-  }
-
-  /**
-   * @dev Internal function to create a unique transfer ID based on the sender's address, amount, and timestamp.
-   * @param amount The amount of funds to be transferred.
-   * @return transferId The unique identifier for the transfer.
-   */
-  function _createTransferId(uint256 amount) internal view returns (uint256) {
-    require(msg.sender != address(0), "Invalid sender");
-    uint256 transferId = uint256(keccak256(abi.encodePacked(msg.sender, amount, block.timestamp)));
-    return transferId;
   }
 }

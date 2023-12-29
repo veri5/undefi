@@ -12,7 +12,6 @@ import { TransferTracker } from "../src/evm/TransferTracker.sol";
 contract TransferTrackerTest is Test {
     // Addresses for testing purposes
     address owner;
-    address payable origin;
     address payable destination;
     address payable unauthorized;
 
@@ -28,7 +27,6 @@ contract TransferTrackerTest is Test {
      */
     function setUp() public {
         owner = payable(address(this));
-        origin = payable(makeAddr("origin"));
         destination = payable(makeAddr("destination"));
         unauthorized = payable(makeAddr("unauthorized"));
         transferTracker = new TransferTracker(owner);
@@ -41,17 +39,12 @@ contract TransferTrackerTest is Test {
      * @dev Tests the requestTransfer function.
      */
     function testRequestTransfer() public {
-        // Emits an event for expected transfer request
-        vm.expectEmit(true, false, false, true, address(transferTracker));
-        emit TransferTracker.TransferRequested(origin, amount);
-
         // Calls the requestTransfer function
-        uint256 transferId = transferTracker.requestTransfer(origin, amount);
+        uint256 transferId = transferTracker.requestTransfer(amount);
 
         // Retrieves and asserts details from the transfer record
-        (address payable storedOrigin, uint256 storedAmount, TransferTracker.TransferStatus storedStatus) = transferTracker.transferRecords(transferId);
+        (uint256 storedAmount, TransferTracker.TransferStatus storedStatus) = transferTracker.transferRecords(transferId);
 
-        assertEq(storedOrigin, origin, "Incorrect origin in record");
         assertEq(storedAmount, amount, "Incorrect amount in record");
         assertEq(uint256(storedStatus), uint256(TransferTracker.TransferStatus.Pending), "Incorrect status in record");
     }
@@ -60,18 +53,18 @@ contract TransferTrackerTest is Test {
      * @dev Tests the triggerTransfer function.
      */
     function testTriggerTransfer() public {
-        // Emits an event for expected transfer request
-        vm.expectEmit(true, false, false, true, address(transferTracker));
-        emit TransferTracker.TransferRequested(origin, amount);
-
         // Calls the requestTransfer function
-        uint256 transferId = transferTracker.requestTransfer(origin, amount);
+        uint256 transferId = transferTracker.requestTransfer(amount);
+
+        // Emits an event for expected transfer triggered
+        vm.expectEmit(true, false, false, true, address(transferTracker));
+        emit TransferTracker.TransferTriggered(destination, amount);
 
         // Calls the triggerTransfer function
         transferTracker.triggerTransfer(destination, transferId);
 
         // Retrieves and asserts details from the transfer record after triggering
-        (,, TransferTracker.TransferStatus storedStatus) = transferTracker.transferRecords(transferId);
+        (, TransferTracker.TransferStatus storedStatus) = transferTracker.transferRecords(transferId);
 
         assertEq(uint256(storedStatus), uint256(TransferTracker.TransferStatus.Completed), "Incorrect status in record");
         assertEq(address(destination).balance, amount, "Destination did not receive funds");
@@ -83,7 +76,7 @@ contract TransferTrackerTest is Test {
      */
     function testOnlyOwnerTriggerTransfer() public {
         // Calls the requestTransfer function
-        uint256 transferId = transferTracker.requestTransfer(origin, amount);
+        uint256 transferId = transferTracker.requestTransfer(amount);
 
         // Expects a revert if an unauthorized address attempts to trigger the transfer
         vm.expectRevert();
