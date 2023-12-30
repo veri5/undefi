@@ -6,17 +6,39 @@ import { Escrow } from "../src/evm/Escrow.sol";
 import { TransferTracker } from "../src/evm/TransferTracker.sol";
 
 /**
- * @title TransferTrackerTest Contract
- * @dev Contract designed for testing the TransferTracker contract functionality.
+ * @title TestTransferTracker
+ * @dev A test contract for the TransferTracker functionality.
+ */
+contract TestTransferTracker is TransferTracker {
+    constructor(address gateway_) TransferTracker(gateway_) {}
+
+    /**
+     * @dev Executes a transfer externally.
+     * @param sourceChain The source chain of the transfer.
+     * @param sourceAddress The source address of the transfer.
+     * @param payload The payload of the transfer.
+     */
+    function externalExecute(    
+        string calldata sourceChain,
+        string calldata sourceAddress,
+        bytes calldata payload) 
+    external {
+        super._execute(sourceChain, sourceAddress, payload);
+    }
+}
+
+/**
+ * @title TransferTrackerTest
+ * @dev A test contract for the TransferTracker functionality.
  */
 contract TransferTrackerTest is Test {
     // Addresses for testing purposes
-    address owner;
+    address gateway_;
     address payable destination;
     address payable unauthorized;
 
     // Instances of contracts used in testing
-    TransferTracker transferTracker;
+    TestTransferTracker transferTracker;
     Escrow escrow;
 
     // Amount for testing transfers
@@ -26,10 +48,10 @@ contract TransferTrackerTest is Test {
      * @dev Sets up initial test conditions.
      */
     function setUp() public {
-        owner = payable(address(this));
+        gateway_ = makeAddr("gateway_");
         destination = payable(makeAddr("destination"));
         unauthorized = payable(makeAddr("unauthorized"));
-        transferTracker = new TransferTracker(owner);
+        transferTracker = new TestTransferTracker(gateway_);
         amount = 100 ether;
         escrow = transferTracker.escrow();
         escrow.deposit{value: amount}();
@@ -40,49 +62,35 @@ contract TransferTrackerTest is Test {
      */
     function testRequestTransfer() public {
         // Calls the requestTransfer function
-        uint256 transferId = transferTracker.requestTransfer(amount);
+        uint256 transferId = transferTracker.requestTransfer(destination, amount);
 
         // Retrieves and asserts details from the transfer record
-        (uint256 storedAmount, TransferTracker.TransferStatus storedStatus) = transferTracker.transferRecords(transferId);
+        (address payable storedDestination, uint256 storedAmount, TransferTracker.TransferStatus storedStatus) = transferTracker.transferRecords(transferId);
 
+        assertEq(storedDestination, destination, "Incorrect destination address in record");
         assertEq(storedAmount, amount, "Incorrect amount in record");
         assertEq(uint256(storedStatus), uint256(TransferTracker.TransferStatus.Pending), "Incorrect status in record");
     }
 
     /**
-     * @dev Tests the triggerTransfer function.
+     * @dev Tests the executeTransfer function.
      */
-    function testTriggerTransfer() public {
+    function testExecuteTransfer() public {
         // Calls the requestTransfer function
-        uint256 transferId = transferTracker.requestTransfer(amount);
+        uint256 transferId = transferTracker.requestTransfer(destination, amount);
 
-        // Emits an event for expected transfer triggered
         vm.expectEmit(true, false, false, true, address(transferTracker));
-        emit TransferTracker.TransferTriggered(destination, amount);
+        emit TransferTracker.TransferExecuted(destination, amount);
 
-        // Calls the triggerTransfer function
-        transferTracker.triggerTransfer(destination, transferId);
+        // Execute the transfer externally, considering it as incoming from the secret network.
+        transferTracker.externalExecute("", "", abi.encode(transferId));
 
-        // Retrieves and asserts details from the transfer record after triggering
-        (, TransferTracker.TransferStatus storedStatus) = transferTracker.transferRecords(transferId);
+        // Retrieves and asserts details from the transfer record
+        (address payable storedDestination, uint256 storedAmount, TransferTracker.TransferStatus storedStatus) = transferTracker.transferRecords(transferId);
 
+        assertEq(address(storedDestination).balance, amount, "Destination did not receive funds");
+        assertEq(storedAmount, amount, "Incorrect amount in record");
         assertEq(uint256(storedStatus), uint256(TransferTracker.TransferStatus.Completed), "Incorrect status in record");
-        assertEq(address(destination).balance, amount, "Destination did not receive funds");
         assertEq(escrow.balance(), 0, "Incorrect escrow balance after withdrawal");
-    }
-
-    /**
-     * @dev Tests that only the owner can trigger a transfer.
-     */
-    function testOnlyOwnerTriggerTransfer() public {
-        // Calls the requestTransfer function
-        uint256 transferId = transferTracker.requestTransfer(amount);
-
-        // Expects a revert if an unauthorized address attempts to trigger the transfer
-        vm.expectRevert();
-
-        // Pranks the system with an unauthorized address and attempts to trigger the transfer
-        vm.prank(unauthorized);
-        transferTracker.triggerTransfer(destination, transferId);
     }
 }
