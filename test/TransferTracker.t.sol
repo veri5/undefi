@@ -10,6 +10,11 @@ import { TransferTracker } from "../src/evm/TransferTracker.sol";
  * @dev A test contract for the TransferTracker functionality.
  */
 contract TestTransferTracker is TransferTracker {
+    /**
+     * @dev Constructor for initializing the TestTransferTracker contract.
+     * @param owner The owner address.
+     * @param gateway_ The address of the gateway.
+     */
     constructor(address owner, address gateway_) TransferTracker(owner, gateway_) {}
 
     /**
@@ -23,6 +28,7 @@ contract TestTransferTracker is TransferTracker {
         string calldata sourceAddress,
         bytes calldata payload) 
     external {
+        // Call the internal _execute function
         super._execute(sourceChain, sourceAddress, payload);
     }
 }
@@ -49,6 +55,7 @@ contract TransferTrackerTest is Test {
      * @dev Sets up initial test conditions.
      */
     function setUp() public {
+        // Set up addresses, instances, and testing amount
         owner = address(this);
         gateway_ = makeAddr("gateway_");
         destination = payable(makeAddr("destination"));
@@ -81,6 +88,7 @@ contract TransferTrackerTest is Test {
         // Calls the requestTransfer function
         uint256 transferId = transferTracker.requestTransfer(destination, amount);
 
+        // Expect an event for the execution of the transfer
         vm.expectEmit(true, false, false, true, address(transferTracker));
         emit TransferTracker.TransferExecuted(destination, amount);
 

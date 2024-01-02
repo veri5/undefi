@@ -12,6 +12,7 @@ import {Escrow} from "./Escrow.sol";
  * @dev Contract to track and execute transfers using AxelarGateway.
  */
 contract TransferTracker is AxelarExecutable {
+  // Using statements for string-to-address and address-to-string conversion
   using StringToAddress for string;
   using AddressToString for address;
 
@@ -44,6 +45,7 @@ contract TransferTracker is AxelarExecutable {
    * @param gateway_ The address of the AxelarGateway contract.
    */
   constructor(address initialOwner, address gateway_) AxelarExecutable(gateway_) {
+    // Create an instance of the Escrow contract
     escrow = new Escrow(initialOwner);
   }
 
@@ -54,7 +56,10 @@ contract TransferTracker is AxelarExecutable {
    * @return transferId The unique identifier for the transfer.
    */
   function requestTransfer(address payable destination, uint256 amount) external returns (uint256) {
+    // Generate a unique transferId using sender, amount, and timestamp
     uint256 transferId = uint256(keccak256(abi.encodePacked(msg.sender, amount, block.timestamp)));
+    
+    // Store the transfer record with a Pending status
     transferRecords[transferId] = TransferRecord(destination, amount, TransferStatus.Pending);
 
     return transferId;
@@ -69,17 +74,25 @@ contract TransferTracker is AxelarExecutable {
     string calldata /*sourceAddress*/,
     bytes calldata payload
   ) internal override {      
+    // Decode the payload to get the transferId
     (uint256 transferId) = abi.decode(payload, (uint256));
 
+    // Retrieve the transfer record
     TransferRecord storage record = transferRecords[transferId];
+    
+    // Check if the transfer status is Pending and the amount and destination are valid
     require(record.status == TransferStatus.Pending, "Invalid transfer status");
     require(record.amount > 0, "Invalid transfer amount");
     require(record.destination != address(0), "Invalid transfer destination");
 
+    // Check if the contract has sufficient balance for the transfer
     require(record.amount <= escrow.balance(), "Insufficient contract balance");
+
+    // Withdraw funds from the escrow and update the transfer status to Completed
     escrow.withdraw(record.destination, record.amount);
     record.status = TransferStatus.Completed;
     
+    // Emit event for the executed transfer
     emit TransferExecuted(record.destination, record.amount);
   }
 }
