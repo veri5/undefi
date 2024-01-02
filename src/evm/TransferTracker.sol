@@ -40,10 +40,11 @@ contract TransferTracker is AxelarExecutable {
 
   /**
    * @dev Constructor to initialize the TransferTracker contract.
+   * @param initialOwner The initial owner address.
    * @param gateway_ The address of the AxelarGateway contract.
    */
-  constructor(address gateway_) AxelarExecutable(gateway_) {
-    escrow = new Escrow();
+  constructor(address initialOwner, address gateway_) AxelarExecutable(gateway_) {
+    escrow = new Escrow(initialOwner);
   }
 
   /**

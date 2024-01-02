@@ -10,7 +10,7 @@ import { TransferTracker } from "../src/evm/TransferTracker.sol";
  * @dev A test contract for the TransferTracker functionality.
  */
 contract TestTransferTracker is TransferTracker {
-    constructor(address gateway_) TransferTracker(gateway_) {}
+    constructor(address owner, address gateway_) TransferTracker(owner, gateway_) {}
 
     /**
      * @dev Executes a transfer externally.
@@ -33,6 +33,7 @@ contract TestTransferTracker is TransferTracker {
  */
 contract TransferTrackerTest is Test {
     // Addresses for testing purposes
+    address owner;
     address gateway_;
     address payable destination;
     address payable unauthorized;
@@ -48,10 +49,11 @@ contract TransferTrackerTest is Test {
      * @dev Sets up initial test conditions.
      */
     function setUp() public {
+        owner = address(this);
         gateway_ = makeAddr("gateway_");
         destination = payable(makeAddr("destination"));
         unauthorized = payable(makeAddr("unauthorized"));
-        transferTracker = new TestTransferTracker(gateway_);
+        transferTracker = new TestTransferTracker(owner, gateway_);
         amount = 100 ether;
         escrow = transferTracker.escrow();
         escrow.deposit{value: amount}();
