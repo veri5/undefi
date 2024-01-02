@@ -7,7 +7,7 @@ export
 
 # Supported networks and scripts
 NETWORKS = polygon avalanche binance scroll_sepolia base
-SCRIPTS = SendAck
+SCRIPTS = TransferTracker
 
 # Help target - Displays available commands with descriptions
 help:
@@ -50,8 +50,8 @@ build:
 	@forge build
 
 # Determine the script path outside of the recipe
-ifeq ($(SCRIPT),SendAck)
-SCRIPT_PATH=script/SendAck.s.sol:SendAckScript
+ifeq ($(SCRIPT),TransferTracker)
+SCRIPT_PATH=script/TransferTracker.s.sol:TransferTrackerScript
 endif
 
 # Deploy target
@@ -95,7 +95,7 @@ rpc:
 # Execute the command manually after asking for user input
 execute:
 	@echo "Please enter the details:"; \
-	read -p "Contract Name (e.g., SendAck): " contract_name; \
+	read -p "Contract Name (e.g., TransferTracker): " contract_name; \
 	read -p "Network (e.g., polygon, avalanche, binance, scroll_sepolia, base): " network; \
 	read -p "Source chain contract address: " src_address; \
 	read -p "Destination chain (e.g., Polygon, Avalanche, binance, scroll, base): " dest_chain; \
@@ -140,7 +140,7 @@ execute:
 	fi; \
 	echo "\033[32mExecuting transaction for $$contract_name...\033[0m"; \
 	method_name=""; \
-	if [ "$$contract_name" = "SendAck" ]; then \
+	if [ "$$contract_name" = "TransferTracker" ]; then \
 		method_name="sendMessage(string,string,string)"; \
 	fi; \
 	if [ -n "$$method_name" ]; then \
