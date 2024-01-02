@@ -10,9 +10,12 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * @dev Implements an escrow mechanism with basic security and functionality.
  */
 contract Escrow is ReentrancyGuard, Pausable, Ownable {
+    // Event emitted when funds are deposited into the escrow
     event Deposited(uint256 amount);
+    // Event emitted when funds are withdrawn from the escrow
     event Withdrawn(address indexed beneficiary, uint256 amount);
 
+    // Current balance in the escrow
     uint256 public balance;
 
     /**
