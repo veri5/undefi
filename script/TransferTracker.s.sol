@@ -20,7 +20,7 @@ contract TransferTrackerScript is Script, NetworkDetailsBase {
         vm.startBroadcast(privateKey);
         
         escrow = new Escrow(initialOwner);
-        transferTracker = new TransferTracker(initialOwner, gateway, address(escrow));
+        transferTracker = new TransferTracker(gateway, address(escrow));
 
         vm.stopBroadcast();
 

@@ -41,11 +41,10 @@ contract TransferTracker is AxelarExecutable {
 
   /**
    * @dev Constructor to initialize the TransferTracker contract.
-   * @param initialOwner The initial owner address.
    * @param gateway_ The address of the AxelarGateway contract.
    * @param escrowAddress The address of the external Escrow contract.
    */
-  constructor(address initialOwner, address gateway_, address escrowAddress) AxelarExecutable(gateway_) {
+  constructor(address gateway_, address escrowAddress) AxelarExecutable(gateway_) {
     // Set the external Escrow contract address
     escrow = Escrow(escrowAddress);
   }

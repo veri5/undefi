@@ -12,11 +12,10 @@ import { TransferTracker } from "../src/evm/TransferTracker.sol";
 contract TestTransferTracker is TransferTracker {
     /**
      * @dev Constructor for initializing the TestTransferTracker contract.
-     * @param owner The owner address.
      * @param gateway_ The address of the gateway.
      * @param escrowAddress The address of the escrow.
      */
-    constructor(address owner, address gateway_, address escrowAddress) TransferTracker(owner, gateway_, escrowAddress) {}
+    constructor(address gateway_, address escrowAddress) TransferTracker(gateway_, escrowAddress) {}
 
     /**
      * @dev Executes a transfer externally.
@@ -40,7 +39,7 @@ contract TestTransferTracker is TransferTracker {
  */
 contract TransferTrackerTest is Test {
     // Addresses for testing purposes
-    address owner;
+    address initialOwner;
     address gateway_;
     address payable destination;
     address payable unauthorized;
@@ -57,14 +56,14 @@ contract TransferTrackerTest is Test {
     */
     function setUp() public {
         // Set up addresses, instances, and testing amount
-        owner = address(this);
+        initialOwner = address(this);
         gateway_ = makeAddr("gateway_");
         destination = payable(makeAddr("destination"));
         unauthorized = payable(makeAddr("unauthorized"));
-        // Deploy a new Escrow contract with the current contract's address as the initial owner
-        escrow = new Escrow(owner);
+        // Deploy a new Escrow contract with the current contract's address as the initial initialOwner
+        escrow = new Escrow(initialOwner);
         // Deploy a new TestTransferTracker contract with specified parameters
-        transferTracker = new TestTransferTracker(owner, gateway_, address(escrow));
+        transferTracker = new TestTransferTracker(gateway_, address(escrow));
         // Set the testing amount and deposit it into the escrow
         amount = 100 ether;
         escrow.deposit{value: amount}();
