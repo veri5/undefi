@@ -14,8 +14,9 @@ contract TestTransferTracker is TransferTracker {
      * @dev Constructor for initializing the TestTransferTracker contract.
      * @param owner The owner address.
      * @param gateway_ The address of the gateway.
+     * @param escrowAddress The address of the escrow.
      */
-    constructor(address owner, address gateway_) TransferTracker(owner, gateway_) {}
+    constructor(address owner, address gateway_, address escrowAddress) TransferTracker(owner, gateway_, escrowAddress) {}
 
     /**
      * @dev Executes a transfer externally.
@@ -52,17 +53,20 @@ contract TransferTrackerTest is Test {
     uint256 amount;
 
     /**
-     * @dev Sets up initial test conditions.
-     */
+    * @dev Sets up initial test conditions.
+    */
     function setUp() public {
         // Set up addresses, instances, and testing amount
         owner = address(this);
         gateway_ = makeAddr("gateway_");
         destination = payable(makeAddr("destination"));
         unauthorized = payable(makeAddr("unauthorized"));
-        transferTracker = new TestTransferTracker(owner, gateway_);
+        // Deploy a new Escrow contract with the current contract's address as the initial owner
+        escrow = new Escrow(owner);
+        // Deploy a new TestTransferTracker contract with specified parameters
+        transferTracker = new TestTransferTracker(owner, gateway_, address(escrow));
+        // Set the testing amount and deposit it into the escrow
         amount = 100 ether;
-        escrow = transferTracker.escrow();
         escrow.deposit{value: amount}();
     }
 

@@ -36,17 +36,18 @@ contract TransferTracker is AxelarExecutable {
     Failed
   }
 
-  // Escrow contract used for managing funds
+  // External Escrow contract used for managing funds
   Escrow public escrow;
 
   /**
    * @dev Constructor to initialize the TransferTracker contract.
    * @param initialOwner The initial owner address.
    * @param gateway_ The address of the AxelarGateway contract.
+   * @param escrowAddress The address of the external Escrow contract.
    */
-  constructor(address initialOwner, address gateway_) AxelarExecutable(gateway_) {
-    // Create an instance of the Escrow contract
-    escrow = new Escrow(initialOwner);
+  constructor(address initialOwner, address gateway_, address escrowAddress) AxelarExecutable(gateway_) {
+    // Set the external Escrow contract address
+    escrow = Escrow(escrowAddress);
   }
 
   /**
@@ -88,7 +89,7 @@ contract TransferTracker is AxelarExecutable {
     // Check if the contract has sufficient balance for the transfer
     require(record.amount <= escrow.balance(), "Insufficient contract balance");
 
-    // Withdraw funds from the escrow and update the transfer status to Completed
+    // Withdraw funds from the external escrow and update the transfer status to Completed
     escrow.withdraw(record.destination, record.amount);
     record.status = TransferStatus.Completed;
     
