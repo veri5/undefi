@@ -3,7 +3,7 @@
 export
 
 # PHONY Targets declaration
-.PHONY: setup-env build deploy format test clean rpc help all install update execute
+.PHONY: setup-env build deploy format test clean rpc help all install update request-transfer
 
 # Supported networks and scripts
 NETWORKS = polygon avalanche binance scroll_sepolia base
@@ -91,62 +91,24 @@ rpc:
 	@echo "\033[0;35mBinance RPC URL:\033[0m" $(BINANCE_TESTNET_RPC_URL)     
 	@echo "\033[0;36mScroll RPC URL:\033[0m" $(SCROLL_SEPOLIA_TESTNET_RPC_URL)       
 	@echo "\033[0;33mBase RPC URL:\033[0m" $(BASE_TESTNET_RPC_URL)
-           
-# Execute the command manually after asking for user input
-execute:
-	@echo "Please enter the details:"; \
-	read -p "Contract Name (e.g., TransferTracker): " contract_name; \
-	read -p "Network (e.g., polygon, avalanche, binance, scroll_sepolia, base): " network; \
-	read -p "Source chain contract address: " src_address; \
-	read -p "Destination chain (e.g., Polygon, Avalanche, binance, scroll, base): " dest_chain; \
-	read -p "Destination chain contract address: " dest_address; \
-	read -p "Value to send in ether (e.g., 0.5): " value_in_ether; \
-	value_in_wei=$$(echo "scale=0; $$value_in_ether*10^18/1" | bc -l); \
-	if [ -z "$$value_in_wei" ]; then \
-		echo "\033[31mFailed to convert value to wei. Please enter a valid numeric value.\033[0m"; \
-		exit 1; \
-	fi; \
-		if [ -z "$$network" ]; then \
-		echo "\033[31mNetwork not provided. Please enter a valid network.\033[0m"; \
-		exit 1; \
-	fi; \
-	if [ -z "$$src_address" ]; then \
-		echo "\033[31mSource contract address not provided. Please enter a valid address.\033[0m"; \
-		exit 1; \
-	fi; \
-	if [ -z "$$dest_chain" ]; then \
-		echo "\033[31mDestination chain not provided. Please enter a valid destination chain.\033[0m"; \
-		exit 1; \
-	fi; \
-	if [ -z "$$dest_address" ]; then \
-		echo "\033[31mDestination contract address not provided. Please enter a valid address.\033[0m"; \
-		exit 1; \
-	fi; \
-	if [ -z "$$value_in_ether" ]; then \
-		echo "\033[31mValue in ether not provided. Please enter a valid amount.\033[0m"; \
-		exit 1; \
-	fi; \
-	network_upper=$$(echo $$network | tr '[:lower:]' '[:upper:]'); \
+
+request-transfer:
+# Validate required environment variables
+ifndef PUBLIC_ADDRESS
+	$(error PUBLIC_ADDRESS is undefined. Please set it in your .env file.)
+endif
+ifndef PRIVATE_KEY
+	$(error PRIVATE_KEY is undefined. Please set it in your .env file.)
+endif
+ifndef EVM_CONTRACT_ADDRESS
+	$(error EVM_CONTRACT_ADDRESS is undefined. Please set it in your .env file.)
+endif
+
+# Calculate amounts in wei and use the network-specific RPC URL from the environment
+	@:; amount_in_wei=$$(echo "scale=0; 0.1*10^18/1" | bc -l); \
+	value_in_wei=$$(echo "scale=0; 0.5*10^18/1" | bc -l); \
+	network_upper=$$(echo $(NETWORK) | tr '[:lower:]' '[:upper:]'); \
 	rpc_url_var=$${network_upper}_TESTNET_RPC_URL; \
 	rpc_url=$${!rpc_url_var}; \
-	if [ -z "$$rpc_url" ]; then \
-		echo "\033[31mRPC URL for $$network is not set in .env. Please set the RPC URL for your network.\033[0m"; \
-		exit 1; \
-	fi; \
-	read -p "Message to send: " message; \
-	if [ -z "$$message" ]; then \
-		echo "\033[31mMessage not provided. Please enter a valid message to send.\033[0m"; \
-		exit 1; \
-	fi; \
-	echo "\033[32mExecuting transaction for $$contract_name...\033[0m"; \
-	method_name=""; \
-	if [ "$$contract_name" = "TransferTracker" ]; then \
-		method_name="sendMessage(string,string,string)"; \
-	fi; \
-	if [ -n "$$method_name" ]; then \
-		cast send $$src_address "$$method_name" $$dest_chain $$dest_address $$message --rpc-url $$rpc_url --private-key $$PRIVATE_KEY --value $$value_in_wei || \
-		echo "\033[31mTransaction failed. Please check the provided details and try again.\033[0m"; \
-	else \
-		echo "\033[31mInvalid contract name. Please enter a valid contract name.\033[0m"; \
-		exit 1; \
-	fi; \
+	cast send $(EVM_CONTRACT_ADDRESS) "requestTransfer(address payable, uint256)" $(PUBLIC_ADDRESS) $$amount_in_wei --rpc-url $$rpc_url --private-key "$(PRIVATE_KEY)" --value $$value_in_wei || \
+	echo "\033[31mTransaction failed. Please check the provided details and try again.\033[0m";
