@@ -3,7 +3,7 @@
 export
 
 # PHONY Targets declaration
-.PHONY: setup-env build deploy format test clean rpc help all install update request-transfer
+.PHONY: setup-env build deploy format test clean rpc help all install update createTransferRecord readTransferRecord
 
 # Supported networks and scripts
 NETWORKS = polygon avalanche binance scroll_sepolia base
@@ -57,16 +57,10 @@ endif
 # Deploy target
 deploy:
 ifndef NETWORK
-	$(error NETWORK is undefined. Supported networks are: $(NETWORKS))
+	$(error NETWORK is undefined.)
 endif
 ifndef SCRIPT
-	$(error SCRIPT is undefined. Supported scripts are: $(SCRIPTS))
-endif
-ifneq ($(findstring $(NETWORK),$(NETWORKS)), $(NETWORK))
-	$(error Invalid network argument passed. Supported networks are: $(NETWORKS))
-endif
-ifneq ($(findstring $(SCRIPT),$(SCRIPTS)), $(SCRIPT))
-	$(error Invalid script argument passed. Supported scripts are: $(SCRIPTS))
+	$(error SCRIPT is undefined.)
 endif
 	@echo "Current NETWORK: $(NETWORK)"
 	@NETWORK=$(NETWORK) forge script $(SCRIPT_PATH) --rpc-url $($(shell echo $(NETWORK) | tr a-z A-Z)_TESTNET_RPC_URL) --broadcast --legacy
@@ -86,13 +80,14 @@ clean:
 
 # Display RPC URLs 
 rpc:
+	@echo "\033[0;33mAnvil RPC URL:\033[0m" $(ANVIL_TESTNET_RPC_URL)
 	@echo "\033[0;32mPolygon RPC URL:\033[0m" $(POLYGON_TESTNET_RPC_URL)     
 	@echo "\033[0;34mAvalanche RPC URL:\033[0m" $(AVALANCHE_TESTNET_RPC_URL)
 	@echo "\033[0;35mBinance RPC URL:\033[0m" $(BINANCE_TESTNET_RPC_URL)     
 	@echo "\033[0;36mScroll RPC URL:\033[0m" $(SCROLL_SEPOLIA_TESTNET_RPC_URL)       
 	@echo "\033[0;33mBase RPC URL:\033[0m" $(BASE_TESTNET_RPC_URL)
 
-request-transfer:
+createTransferRecord:
 # Validate required environment variables
 ifndef PUBLIC_ADDRESS
 	$(error PUBLIC_ADDRESS is undefined. Please set it in your .env file.)
@@ -105,10 +100,23 @@ ifndef EVM_CONTRACT_ADDRESS
 endif
 
 # Calculate amounts in wei and use the network-specific RPC URL from the environment
-	@:; amount_in_wei=$$(echo "scale=0; 0.1*10^18/1" | bc -l); \
-	value_in_wei=$$(echo "scale=0; 0.5*10^18/1" | bc -l); \
-	network_upper=$$(echo $(NETWORK) | tr '[:lower:]' '[:upper:]'); \
+	@:; network_upper=$$(echo $(NETWORK) | tr '[:lower:]' '[:upper:]'); \
+	amount_in_wei=$$(echo "scale=0; 1*10^18/1" | bc -l); \
 	rpc_url_var=$${network_upper}_TESTNET_RPC_URL; \
 	rpc_url=$${!rpc_url_var}; \
-	cast send $(EVM_CONTRACT_ADDRESS) "requestTransfer(address payable, uint256)" $(PUBLIC_ADDRESS) $$amount_in_wei --rpc-url $$rpc_url --private-key "$(PRIVATE_KEY)" --value $$value_in_wei || \
+	cast send $(EVM_CONTRACT_ADDRESS) "createTransferRecord(address payable, uint256)(uint256)" $(PUBLIC_ADDRESS) $$amount_in_wei --rpc-url $$rpc_url --private-key "$(PRIVATE_KEY)" || \
+	echo "\033[31mTransaction failed. Please check the provided details and try again.\033[0m"; \
+
+readTransferRecord:
+# Validate required environment variables
+ifndef TRANSFER_ID
+	$(error TRANSFER_ID is undefined. Please set it in your .env file.)
+endif
+ifndef EVM_CONTRACT_ADDRESS
+	$(error EVM_CONTRACT_ADDRESS is undefined. Please set it in your .env file.)
+endif
+	@:; network_upper=$$(echo $(NETWORK) | tr '[:lower:]' '[:upper:]'); \
+	rpc_url_var=$${network_upper}_TESTNET_RPC_URL; \
+	rpc_url=$${!rpc_url_var}; \
+	cast call $(EVM_CONTRACT_ADDRESS) "readTransferRecord(uint256)(address payable, uint256, uint256, uint256)" $(TRANSFER_ID) --rpc-url $$rpc_url || \
 	echo "\033[31mTransaction failed. Please check the provided details and try again.\033[0m";
