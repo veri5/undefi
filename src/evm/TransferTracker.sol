@@ -62,6 +62,10 @@ contract TransferTracker is AxelarExecutable {
         external
         returns (uint256 transferId) 
     {
+        // Ensure destination address and amount are valid
+        require(destination != address(0), "Destination address cannot be null");
+        require(amount > 0, "Amount cannot be zero");
+
         // Generate a unique transferId using keccak256
         transferId = uint256(keccak256(abi.encodePacked(msg.sender, amount, block.timestamp)));
         
