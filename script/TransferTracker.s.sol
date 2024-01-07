@@ -25,6 +25,6 @@ contract TransferTrackerScript is Script, NetworkDetailsBase {
         vm.stopBroadcast();
 
         console.log("TransferTracker deployed at:", address(transferTracker));
-        console.log("Escrow deployed at:", address(escrow)); // Added deployment log
+        console.log("Escrow deployed at:", address(escrow));
     }
 }

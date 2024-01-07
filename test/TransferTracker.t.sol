@@ -43,6 +43,7 @@ contract TransferTrackerTest is Test {
     address gateway_;
     address payable destination;
     address payable unauthorized;
+    uint256 timestamp;
 
     // Instances of contracts used in testing
     TestTransferTracker transferTracker;
@@ -67,42 +68,43 @@ contract TransferTrackerTest is Test {
         // Set the testing amount and deposit it into the escrow
         amount = 100 ether;
         escrow.deposit{value: amount}();
+        timestamp = block.timestamp;
     }
 
     /**
-     * @dev Tests the requestTransfer function.
+     * @dev Tests the createTransferRecord function.
      */
-    function testRequestTransfer() public {
-        // Calls the requestTransfer function
-        uint256 transferId = transferTracker.requestTransfer(destination, amount);
+    function testCreateTransferRecord() public {
+        // Calls the createTransferRecord function
+        uint256 transferId = transferTracker.createTransferRecord(destination, amount);
 
         // Retrieves and asserts details from the transfer record
-        (address payable storedDestination, uint256 storedAmount, TransferTracker.TransferStatus storedStatus) = transferTracker.transferRecords(transferId);
+        (address payable storedDestination, uint256 storedAmount, TransferTracker.TransferStatus storedStatus, uint256 storedTimestamp) = transferTracker.transferRecords(transferId);
 
         assertEq(storedDestination, destination, "Incorrect destination address in record");
         assertEq(storedAmount, amount, "Incorrect amount in record");
         assertEq(uint256(storedStatus), uint256(TransferTracker.TransferStatus.Pending), "Incorrect status in record");
+        assertEq(timestamp, storedTimestamp, "Incorrect timestamp in record");
     }
 
     /**
      * @dev Tests the executeTransfer function.
      */
     function testExecuteTransfer() public {
-        // Calls the requestTransfer function
-        uint256 transferId = transferTracker.requestTransfer(destination, amount);
+        // Calls the createTransferRecord function
+        uint256 transferId = transferTracker.createTransferRecord(destination, amount);
 
         // Expect an event for the execution of the transfer
         vm.expectEmit(true, false, false, true, address(transferTracker));
-        emit TransferTracker.TransferExecuted(destination, amount);
+        emit TransferTracker.TransferExecuted(transferId, TransferTracker.TransferStatus.Completed, timestamp);
 
         // Execute the transfer externally, considering it as incoming from the secret network.
         transferTracker.externalExecute("", "", abi.encode(transferId));
 
         // Retrieves and asserts details from the transfer record
-        (address payable storedDestination, uint256 storedAmount, TransferTracker.TransferStatus storedStatus) = transferTracker.transferRecords(transferId);
+        (address payable storedDestination, , TransferTracker.TransferStatus storedStatus, ) = transferTracker.transferRecords(transferId);
 
         assertEq(address(storedDestination).balance, amount, "Destination did not receive funds");
-        assertEq(storedAmount, amount, "Incorrect amount in record");
         assertEq(uint256(storedStatus), uint256(TransferTracker.TransferStatus.Completed), "Incorrect status in record");
         assertEq(escrow.balance(), 0, "Incorrect escrow balance after withdrawal");
     }
