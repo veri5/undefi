@@ -1,4 +1,4 @@
-use cosmwasm_std::Binary;
+use cosmwasm_std::{Binary, Uint256};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -11,7 +11,7 @@ pub enum ExecuteMsg {
     SendMessageEvm {
         destination_chain: String,
         destination_address: String,
-        message: String,
+        message: Uint256,
     },
     ReceiveMessageEvm {
         source_chain: String,

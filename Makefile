@@ -6,7 +6,7 @@ export
 .PHONY: setup-env build deploy format test clean rpc help all install update createTransferRecord readTransferRecord
 
 # Supported networks and scripts
-NETWORKS = polygon avalanche binance scroll_sepolia base
+NETWORKS = anvil polygon avalanche binance scroll_sepolia base
 SCRIPTS = TransferTracker
 
 # Help target - Displays available commands with descriptions
@@ -101,7 +101,7 @@ endif
 
 # Calculate amounts in wei and use the network-specific RPC URL from the environment
 	@:; network_upper=$$(echo $(NETWORK) | tr '[:lower:]' '[:upper:]'); \
-	amount_in_wei=$$(echo "scale=0; 1*10^18/1" | bc -l); \
+	amount_in_wei=$$(echo "scale=0; 16*10^18/1" | bc -l); \
 	rpc_url_var=$${network_upper}_TESTNET_RPC_URL; \
 	rpc_url=$${!rpc_url_var}; \
 	cast send $(EVM_CONTRACT_ADDRESS) "createTransferRecord(address payable, uint256)(uint256)" $(PUBLIC_ADDRESS) $$amount_in_wei --rpc-url $$rpc_url --private-key "$(PRIVATE_KEY)" || \

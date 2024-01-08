@@ -12,13 +12,13 @@ const secretjs = new SecretNetworkClient({
 });
 
 // secret contract info
-let contractCodeHash = "129ce787a42b73312000a325b769b3af1e5b2d6414916dec040c20a8bcf79163";
-let contractAddress = "secret12qa82nrzvpqjk07fcdfn42qxgcfnxvd5jgcyus";
+let contractCodeHash = "db52ac888c67b1715c32b750f3e718da138f36ef6c4c870a956d12774e7a8305";
+let contractAddress = "secret1xellx0nty80cr92fynf928e5fy0dj6dd2g2f8r";
 
 //send_message_evm variables
 let destinationChain = "Polygon";
-let destinationAddress = "0x137e4fba036bf10cd737f054786f1bf0dad1d7e5";
-let myMessage = "UnDefi rules back!";
+let destinationAddress = "0xdC6726BBE49c852Cf5E1EC6EaE8467C029724e68";
+let myMessage = "77441867501911094552758180949755689375269979576562133636519309172089474839469";
 
 let send_message_evm = async () => {
   const tx = await secretjs.tx.compute.executeContract(

@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint256
 };
 
 use crate::{
@@ -11,7 +11,14 @@ use crate::msg::QueryMsg::GetStoredMessage;
 
 use crate::state::*;
 
-use ethabi::{decode, encode, ParamType, Token};
+use ethabi::{
+    ethereum_types::{
+        // H160,
+        U256,
+    },
+    {decode, encode, ParamType, Token}
+};
+
 use prost::Message;
 use serde_json_wasm::to_string;
 
@@ -61,12 +68,15 @@ pub fn send_message_evm(
     info: MessageInfo,
     destination_chain: String,
     destination_address: String,
-    message: String,
+    transfer_id: Uint256,
 ) -> Result<Response, CustomContractError> {
+    // Manual conversion
+    let uint256_transfer_id = U256::from_big_endian(&transfer_id.to_be_bytes());
+
     // Message payload to be received by the destination
-    let message_payload = encode(&vec![
+    let message_payload = encode(&[
         Token::String(info.sender.to_string()),
-        Token::String(message),
+        Token::Uint(uint256_transfer_id),
     ]);
 
     let coin = &info.funds[0];

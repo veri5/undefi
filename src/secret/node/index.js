@@ -18,7 +18,6 @@ const secretjs = new SecretNetworkClient({
 // Declare global variables
 let codeId;
 let contractCodeHash;
-let contractAddress;
 
 let upload_contract = async () => {
   console.log("Starting deployment…");
@@ -34,6 +33,8 @@ let upload_contract = async () => {
       gasLimit: 4_000_000,
     }
   );
+
+  console.log(tx)
 
   codeId = Number(
     tx.arrayLog.find((log) => log.type === "message" && log.key === "code_id")
