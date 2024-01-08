@@ -113,11 +113,8 @@ contract TransferTracker is AxelarExecutable {
         string calldata /*sourceAddress*/,
         bytes calldata payload
     ) internal override {      
-        // Decode the payload to get the transferId as a string
-        (string memory _transferId) = abi.decode(payload, (string));
-
-        // Convert the string to uint256
-        uint256 transferId = uint256(keccak256(abi.encodePacked(_transferId)));
+        // Decode the payload to get the transferId
+        (uint256 transferId) = abi.decode(payload, (uint256));
 
         // Retrieve the transfer record
         TransferRecord storage record = transferRecords[transferId];
